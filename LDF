@@ -1,0 +1,41 @@
+import React, { useState } from "react"; import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"; import * as math from "mathjs";
+
+export default function FunctionVisualizer() { const [input, setInput] = useState("2x + 3"); const [data, setData] = useState([]); const [info, setInfo] = useState("");
+
+const generateData = (expr) => { try { const fn = math.parse(expr).compile(); const values = []; for (let x = -10; x <= 10; x += 0.5) { const y = fn.evaluate({ x }); values.push({ x, y }); } setData(values);
+
+const cleanedExpr = expr.replace(/\s/g, "");
+
+  // Fonksiyon analiz: Doğrusal ya da ikinci derece
+  const linearMatch = cleanedExpr.match(/^([+-]?\d*)x([+-]\d+)?$/);
+  const fullLinearMatch = cleanedExpr.match(/^([+-]?\d*)x([+-]\d+)$/);
+  const quadraticMatch = cleanedExpr.match(/^([+-]?\d*)x\^2([+-]\d*)x([+-]\d+)$/);
+
+  if (fullLinearMatch) {
+    const slope = fullLinearMatch[1] === "" || fullLinearMatch[1] === "+" ? 1 : fullLinearMatch[1] === "-" ? -1 : parseInt(fullLinearMatch[1]);
+    const intercept = parseInt(fullLinearMatch[2]);
+    setInfo(`Bu doğrusal bir fonksiyondur. Eğimi ${slope}, y eksenini ${intercept} noktasında keser.`);
+  } else if (quadraticMatch) {
+    const a = parseInt(quadraticMatch[1] || "1");
+    const b = parseInt(quadraticMatch[2] || "1");
+    const c = parseInt(quadraticMatch[3]);
+    const vertexX = -b / (2 * a);
+    const vertexY = a * vertexX * vertexX + b * vertexX + c;
+    setInfo(`Bu bir parabol fonksiyonudur. Tepesi (${vertexX.toFixed(2)}, ${vertexY.toFixed(2)}) noktasındadır. Açılım yönü ${a > 0 ? "yukarı" : "aşağı"} doğrudur.`);
+  } else if (linearMatch) {
+    const slope = linearMatch[1] === "" || linearMatch[1] === "+" ? 1 : linearMatch[1] === "-" ? -1 : parseInt(linearMatch[1]);
+    const intercept = 0;
+    setInfo(`Bu doğrusal bir fonksiyondur. Eğimi ${slope}, y eksenini ${intercept} noktasında keser.`);
+  } else {
+    setInfo("Fonksiyon grafik çizildi fakat türü otomatik analiz edilemedi.");
+  }
+
+} catch (err) {
+  setInfo("Geçersiz ifade. Lütfen geçerli bir matematiksel fonksiyon girin.");
+  setData([]);
+}
+
+};
+
+return ( <div className="p-6 max-w-xl mx-auto bg-white rounded-2xl shadow-md"> <h1 className="text-3xl font-bold mb-4 text-center">Fonksiyon Görselleştirici</h1> <input type="text" value={input} onChange={(e) => setInput(e.target.value)} className="border border-gray-300 p-2 w-full mb-4 rounded" placeholder="Örn: 2x + 3 veya x^2 - 4x + 5" /> <button onClick={() => generateData(input)} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded w-full mb-4" > Grafiği Göster </button> <p className="mt-4 font-medium text-gray-700 text-center">{info}</p> <div className="mt-6"> <ResponsiveContainer width="100%" height={300}> <LineChart data={data}> <CartesianGrid strokeDasharray="3 3" /> <XAxis dataKey="x" /> <YAxis /> <Tooltip formatter={(value) => value.toFixed(2)} /> <Line type="monotone" dataKey="y" stroke="#8884d8" dot={false} /> </LineChart> </ResponsiveContainer> </div> </div> ); }
+
